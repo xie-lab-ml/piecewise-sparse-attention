@@ -1,7 +1,7 @@
 # PISA: Piecewise Sparse Attention Is Wiser for Efficient Diffusion Transformers
 
-# News
+## News
 
-# Plans
+## Plans
 - [ ] Release triton kernel
 - [ ] Release inference script
