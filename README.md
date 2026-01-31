@@ -5,13 +5,17 @@
 </div>
 
 <p align="center">
-<img src="title.png" width=95%>
+<img src="assets/title.png" width=95%>
 <p>
 
 ## TL;DR
 We propose a training-free Piecewise Sparse Attention (PISA) that covers the full attention span with sub-quadratic complexity.
 
 Unlike the standard ***keep-or-drop*** paradigm that directly drop the non-critical blocks, PISA introduces a novel ***exact-or-approximate*** strategy: it maintains exact computation for critical blocks while efficiently approximating the remainder through block-wise Taylor expansion.
+
+<p align="center">
+<img src="assets/attn_map.png" width=50%>
+<p>
 
 ## News
 
