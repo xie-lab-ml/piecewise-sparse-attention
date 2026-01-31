@@ -8,6 +8,13 @@
 <img src="title.png" width=95%>
 <p>
 
+## TL;DR
+We propose a training-free Piecewise Sparse Attention (PISA) that covers the full attention span with sub-quadratic complexity.
+
+| Method | Paradigm | Strategy |
+| :--- | :--- | :--- |
+| Standard Sparse Attention | Keep-or-drop | Directly drop non-critical block. |
+| **Piecewise Sparse Attention** | **Exact-or-approximate** | Maintains exact computation for critical blocks while efficiently approximating the remainder through block-wise Taylor expansion. |
 
 ## News
 
