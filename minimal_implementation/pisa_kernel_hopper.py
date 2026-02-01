@@ -98,14 +98,17 @@ def chunk_reduce(q, k, v, chunk_size):
 def sparse_global_correction_fwd(
     q, k, v,
     kc, vc,
-    h,       
-    o, lse,
+    h, o,
     indices,
     scale,
     T,
-    K: tl.constexpr, V: tl.constexpr,
-    BT: tl.constexpr, BK: tl.constexpr, BV: tl.constexpr,
-    NT: tl.constexpr, NS: tl.constexpr,
+    K: tl.constexpr,
+    V: tl.constexpr,
+    BT: tl.constexpr,
+    BK: tl.constexpr,
+    BV: tl.constexpr,
+    NT: tl.constexpr,
+    NS: tl.constexpr,
     GROUP_SIZE: tl.constexpr
 ):
     i_v, i_t, i_bh = tl.program_id(0), tl.program_id(1), tl.program_id(2)
@@ -208,7 +211,7 @@ def sparse_piecewise_attention_v3(q, k, v, density=0.1, block_size=64, scale=Non
     BV = min(128, triton.next_power_of_2(V))
     
     qc, kc, vc = chunk_reduce(q, k, v, block_size)
-    h = (k - kc.mean(dim=-1, keepdim=True)).transpose(-2, -1) @ v
+    h = (k - kc.mean(dim=-2, keepdim=True)).transpose(-2, -1) @ v
     
     score = torch.einsum('bhid, bhjd -> bhij', qc, kc)
     top_k = max(1, int(density * NT))
