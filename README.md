@@ -8,9 +8,6 @@
 <img src="assets/PISA_Title_Page.jpg" width=95%>
 <p>
 
-<p align="center">
-| <a href="https://arxiv.org/abs/"><b>Paper</b></a> |
-</p>
 
 
 
