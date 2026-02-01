@@ -13,12 +13,11 @@ We propose a training-free Piecewise Sparse Attention (PISA) that covers the ful
 
 Unlike the standard ***keep-or-drop*** paradigm that directly drop the non-critical blocks, PISA introduces a novel ***exact-or-approximate*** strategy: it maintains exact computation for critical blocks while efficiently approximating the remainder through block-wise Taylor expansion.
 
-<p align="center">
-<img src="assets/attn_map.png" width=50%>
-<p>
-
 ## News
+- [2026/02/02] Our paper is released.
 
 ## Plans
-- [ ] Release triton kernel
+We currently only provide a minimal implementation for the community to understand and modify. We will release inference scripts for video and image generation in the coming weeks.
+
+- [x] Release triton kernel
 - [ ] Release inference script
