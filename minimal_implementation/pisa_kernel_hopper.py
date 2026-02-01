@@ -181,7 +181,7 @@ def sparse_global_correction_fwd(
         weighted_prob = prob_chunk * current_lens[None, :]
         g_l += tl.sum(weighted_prob, axis=1)
 
-    # 3. Phase 2: Approx Attention (First-Order)
+    # Phase 3: Approx Attention (First-Order)
     p_h = tl.make_tensor_descriptor(h + i_bh * K * V , (K, V), (V, 1), (BK, BV))
     b_h = p_h.load([0, i_v * BV])
 
