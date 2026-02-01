@@ -5,7 +5,7 @@
 </div>
 
 <p align="center">
-<img src="assets/title.png" width=95%>
+<img src="assets/PISA_Title_Page.jpg" width=95%>
 <p>
 
 ## TL;DR
