@@ -48,8 +48,8 @@ Note: Our kernels are currently primarily optimized for the NVIDIA Hopper archit
 ### Text-to-Image Generation
 ```diff
 from diffusers import AutoPipelineForText2Image
-+ from pisa.models.flux.flux_processor import FluxAttnProcessor, set_processor
-+ from pisa.kernels.piecewise_sparse_attn_tma import piecewise_sparse_attention
++ from piecewise_attn import piecewise_sparse_attention
++ from piecewise_attn.models import FluxAttnProcessor, set_processor
 
 pipeline = AutoPipelineForText2Image.from_pretrained(
     "black-forest-labs/FLUX.1-dev", torch_dtype=torch.bfloat16,
