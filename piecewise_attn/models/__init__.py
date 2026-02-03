@@ -1,0 +1,1 @@
+from .flux.flux_processor import FluxAttnProcessor, set_processor

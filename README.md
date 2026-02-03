@@ -29,6 +29,21 @@ Unlike the standard ***keep-or-drop*** paradigm that directly drop the non-criti
 - [ ] Release wan/hyvideo inference script
 
 
+## 🔧 Installation
+Requirements:
+* `torch >= 2.7.1`
+* `triton >= 3.5.1`
+
+
+Install:
+```shell
+git clone https://github.com/hp-l33/piecewise-sparse-attention.git
+cd piecewise-sparse-attention
+pip install -e .
+```
+
+Note: Our kernels are currently primarily optimized for the NVIDIA Hopper architecture (e.g., H100, H800).
+
 ## 🎮 Quick Start
 ### Text-to-Image Generation
 ```diff
