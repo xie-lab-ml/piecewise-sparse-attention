@@ -1,10 +1,23 @@
 # Copyright (c) 2025-2026, Haopeng Li
 
-import torch
-import triton
-import torch.nn.functional as F
-import triton.language as tl
 import functools
+import warnings
+
+import torch
+import torch.nn.functional as F
+
+import triton
+import triton.language as tl
+
+from triton.tools.tensor_descriptor import TensorDescriptor
+
+
+def is_cuda():
+    return triton.runtime.driver.active.get_current_target().backend == "cuda"
+
+
+def supports_host_descriptor():
+    return is_cuda() and torch.cuda.get_device_capability()[0] >= 9
 
 
 def contiguous(fn):
@@ -64,6 +77,57 @@ def chunk_reduce_kernel(
     tl.store(p_vc, b_vc.to(p_vc.dtype.element_ty), boundary_check=(0,))
 
 
+@triton.autotune(
+    configs=[
+        triton.Config({}, num_warps=num_warps, num_stages=num_stages)
+        for num_warps in [4, 8]
+        for num_stages in [2, 3, 4]
+    ],
+    key=["T"]
+)
+@triton.jit
+def fused_chunk_reduce_kernel(
+    q, k, v,
+    qc, kc, vc, hc,
+    T,
+    N: tl.constexpr,
+    K: tl.constexpr,
+    V: tl.constexpr,
+    BT: tl.constexpr,
+    BK: tl.constexpr,
+    BV: tl.constexpr
+):
+    i_kv, i_t, i_bh = tl.program_id(0), tl.program_id(1), tl.program_id(2)
+    
+    i_k = i_kv // tl.cdiv(V, BV)
+    i_v = i_kv % tl.cdiv(V, BV)
+
+    BLOCK_SIZE = tl.minimum(BT, T - i_t * BT)
+
+    p_q = tl.make_tensor_descriptor(q + i_bh * T * K, (T, K), (K, 1), (BT, BK))
+    p_k = tl.make_tensor_descriptor(k + i_bh * T * K, (T, K), (K, 1), (BT, BK))
+    p_v = tl.make_tensor_descriptor(v + i_bh * T * V, (T, V), (V, 1), (BT, BV))
+    
+    b_q = p_q.load([i_t * BT, i_k * BK])
+    b_k = p_k.load([i_t * BT, i_k * BK])
+    b_v = p_v.load([i_t * BT, i_v * BV])
+    
+    b_qc = tl.sum(b_q, axis=0) / BLOCK_SIZE
+    b_kc = tl.sum(b_k, axis=0) / BLOCK_SIZE
+    b_vc = tl.sum(b_v, axis=0)
+    b_hc = tl.dot(tl.trans(b_k - b_kc[None, :]).to(b_v.dtype), b_v)
+
+    p_qc = tl.make_block_ptr(qc + i_bh * N * K + i_t * K, (K,), (1,), (i_k * BK,), (BK,), (0,))
+    p_kc = tl.make_block_ptr(kc + i_bh * N * K + i_t * K, (K,), (1,), (i_k * BK,), (BK,), (0,))
+    p_vc = tl.make_block_ptr(vc + i_bh * N * V + i_t * V, (V,), (1,), (i_v * BV,), (BV,), (0,))
+    p_hc = tl.make_block_ptr(hc + i_bh * N * K * V + i_t * K * V, (K, V), (V, 1), (i_k * BK, i_v * BV), (BK, BV), (1, 0))
+
+    tl.store(p_qc, b_qc.to(p_qc.dtype.element_ty), boundary_check=(0,))
+    tl.store(p_kc, b_kc.to(p_kc.dtype.element_ty), boundary_check=(0,))
+    tl.store(p_vc, b_vc.to(p_vc.dtype.element_ty), boundary_check=(0,))
+    tl.store(p_hc, b_hc.to(p_hc.dtype.element_ty), boundary_check=(0, 1))
+
+
 def chunk_reduce(q, k, v, chunk_size):
     B, H, T, K, V = *k.shape, v.shape[-1]
     N = triton.cdiv(T, chunk_size)
@@ -85,6 +149,33 @@ def chunk_reduce(q, k, v, chunk_size):
     return qc, kc, vc
 
 
+def fused_chunk_reduce(q, k, v, chunk_size, use_bias=False, p=2):
+    B, H, T, K, V = *k.shape, v.shape[-1]
+    N = triton.cdiv(T, chunk_size)
+    
+    BK = min(128, triton.next_power_of_2(K))
+    BV = min(128, triton.next_power_of_2(V)) 
+    
+    qc = torch.empty(B, H, N, K, device=k.device, dtype=k.dtype)
+    kc = torch.empty(B, H, N, K, device=k.device, dtype=k.dtype)
+    vc = torch.empty(B, H, N, V, device=v.device, dtype=v.dtype)
+    hc = torch.empty(B, H, N, K, V, device=v.device, dtype=v.dtype)
+    
+    grid = (triton.cdiv(K, BK) * triton.cdiv(V, BV), N, B * H)
+    fused_chunk_reduce_kernel[grid](
+        q=q, k=k, v=v,
+        qc=qc, kc=kc, vc=vc, hc=hc,
+        T=T, N=N, K=K, V=V,
+        BT=chunk_size, BK=BK, BV=BV
+    )
+
+    if use_bias:
+        h_norm = torch.norm(hc.flatten(-2, -1), p=p, dim=-1)
+        return qc, kc, vc, hc.sum(dim=2), h_norm[..., None, :]
+    else:
+        return qc, kc, vc, hc.sum(dim=2), None
+
+
 @triton.autotune(
     configs=[
         triton.Config({'GROUP_SIZE': GROUP_SIZE}, num_warps=num_warps, num_stages=num_stages)
@@ -95,7 +186,7 @@ def chunk_reduce(q, k, v, chunk_size):
     key=["T"]
 )
 @triton.jit
-def sparse_global_correction_fwd(
+def piecewise_sparse_attention_fwd_kernel(
     q, k, v,
     kc, vc,
     h, o,
@@ -201,26 +292,35 @@ def sparse_global_correction_fwd(
     p_o.store([i_t * BT, i_v * BV], acc.to(b_q.dtype))
 
 
-@torch.compile
-def sparse_piecewise_attention_v3(q, k, v, density=0.1, block_size=64, scale=None):
+# @torch.compile
+def piecewise_sparse_attention(q, k, v, density=0.1, block_size=64, scale=None, use_bias=False):
+    if not supports_host_descriptor():
+        warnings.warn(
+            "Optimization Note: Best performance is achieved on the Hopper platform (e.g., H100). "
+            "Current platform may experience sub-optimal execution speeds.",
+            UserWarning
+        )
+        
     B, H, T, K, V = *k.shape, v.shape[-1]
     scale = K ** -0.5 if scale is None else scale
 
     NT = triton.cdiv(T, block_size)
     BK = min(128, triton.next_power_of_2(K))
     BV = min(128, triton.next_power_of_2(V))
+
+    qc, kc, vc, h, bias = fused_chunk_reduce(q, k, v, block_size, use_bias=use_bias)
     
-    qc, kc, vc = chunk_reduce(q, k, v, block_size)
-    h = (k - kc.mean(dim=-2, keepdim=True)).transpose(-2, -1) @ v
-    
-    score = torch.einsum('bhid, bhjd -> bhij', qc, kc)
+    score = torch.einsum('bhid, bhjd -> bhij', qc, kc * scale)
+    if bias is not None:
+        score = torch.softmax(score + torch.log(bias + 1e-5), dim=-1)
+
     top_k = max(1, int(density * NT))
     indices = torch.topk(score, k=top_k, dim=-1).indices 
     
     o = torch.empty_like(v)
 
     grid = (triton.cdiv(V, BV), NT, B * H)
-    sparse_global_correction_fwd[grid](
+    piecewise_sparse_attention_fwd_kernel[grid](
         q=q, k=k, v=v,
         kc=kc, vc=vc,
         h=h, o=o,
