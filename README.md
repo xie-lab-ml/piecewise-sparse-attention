@@ -1,26 +1,36 @@
 <!-- # PISA: Piecewise Sparse Attention Is Wiser for Efficient Diffusion Transformers
  -->
 <div align ="center">
-<h3>PISA: Piecewise Sparse Attention Is Wiser for Efficient Diffusion Transformers</h3>
+<h2>PISA: Piecewise Sparse Attention Is Wiser for Efficient Diffusion Transformers</h2>
 </div>
+
+<!-- <p align="center">
+    <a href="https://arxiv.org/abs/2602.01077"><b>Paper</b></a>
+</p> -->
 
 <p align="center">
 <img src="assets/PISA_Title_Page.jpg" width=100%>
 <p>
 
 
+## 🔥 News
+- [2026/02] [Paper](https://arxiv.org/abs/2602.01077) is released.
 
 
-## TL;DR
+## 💡 TL;DR
 We propose a training-free Piecewise Sparse Attention (PISA) that covers the full attention span with sub-quadratic complexity.
 
 Unlike the standard ***keep-or-drop*** paradigm that directly drop the non-critical blocks, PISA introduces a novel ***exact-or-approximate*** strategy: it maintains exact computation for critical blocks while efficiently approximating the remainder through block-wise Taylor expansion.
 
-## News
-- [2026/02/02] Our paper is released.
+
 
 ## Plans
-We currently provide a minimal implementation for the community to understand and modify. We will release inference scripts for video and image generation in the coming weeks.
-
 - [x] Release triton kernel
-- [ ] Release inference script
+- [x] Release flux.1-dev inference demo
+- [ ] Release wan/hyvideo inference script
+
+
+<!-- ## 🔗 BibTeX
+```bibtex
+
+``` -->
