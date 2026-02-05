@@ -69,17 +69,9 @@ image = pipe(
 ```
 
 
-<!-- ## 🔗 BibTeX
+## 🔗 BibTeX
 If this work is helpful for your research, please give it a star or cite it:
 ```bibtex
-
-``` -->
-
-
-# Citing
-
-
-```
 @article{li2026pisa,
   title = {PISA: Piecewise Sparse Attention Is Wiser for Efficient Diffusion Transformers},
   author = {Li, Haopeng and Shao, Shitong and Zhong, Wenliang and Zhou, Zikai and Bai, Lichen and Xiong, Hui and Xie, Zeke},
