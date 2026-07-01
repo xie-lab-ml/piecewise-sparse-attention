@@ -280,7 +280,7 @@ def piecewise_sparse_attention_fwd_kernel(
         
         acc += tl.dot(prob_chunk.to(b_vc.dtype), b_vc)
         weighted_prob = prob_chunk * current_lens[None, :]
-        g_l += tl.sum(weighted_prob, axis=1)
+        g_l = g_l * alpha + tl.sum(weighted_prob, axis=1)
 
     # Phase 3: Approx Attention (First-Order)
     p_h = tl.make_tensor_descriptor(h + i_bh * K * V , (K, V), (V, 1), (BK, BV))
