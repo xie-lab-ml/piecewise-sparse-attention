@@ -12,6 +12,13 @@ import triton.language as tl
 from triton.tools.tensor_descriptor import TensorDescriptor
 
 
+def _make_tma_allocator():
+    def alloc_fn(size: int, alignment: int, stream):
+        return torch.empty(size, device="cuda", dtype=torch.int8)
+
+    return alloc_fn
+
+
 def is_cuda():
     return triton.runtime.driver.active.get_current_target().backend == "cuda"
 
@@ -293,7 +300,9 @@ def piecewise_sparse_attention_fwd_kernel(
 
 
 # @torch.compile
-def piecewise_sparse_attention(q, k, v, density=0.1, block_size=64, scale=None, use_bias=False):
+def piecewise_sparse_attention(q, k, v, density=0.1, block_size=64, scale=None, use_bias=False, sink_idx=None):
+    triton.set_allocator(_make_tma_allocator())
+
     if not supports_host_descriptor():
         warnings.warn(
             "Optimization Note: Best performance is achieved on the Hopper platform (e.g., H100). "
@@ -313,6 +322,10 @@ def piecewise_sparse_attention(q, k, v, density=0.1, block_size=64, scale=None, 
     score = torch.einsum('bhid, bhjd -> bhij', qc, kc * scale)
     if bias is not None:
         score = torch.softmax(score + torch.log(bias + 1e-5), dim=-1)
+
+    if sink_idx is not None:
+        assert sink_idx in (0, -1), "sink_idx must be 0, -1, or None"
+        score[..., sink_idx] = float("inf")
 
     top_k = max(1, int(density * NT))
     indices = torch.topk(score, k=top_k, dim=-1).indices 

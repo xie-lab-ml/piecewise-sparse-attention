@@ -31,8 +31,8 @@ Unlike the standard ***keep-or-drop*** paradigm that directly drop the non-criti
 
 ## 🔧 Installation
 Requirements:
-* `torch >= 2.7.1`
-* `triton >= 3.5.1`
+* `torch >= 2.10`
+* `triton >= 3.6`
 
 
 Install:
@@ -43,6 +43,13 @@ pip install -e .
 ```
 
 Note: Our kernels are currently primarily optimized for the NVIDIA Hopper architecture (e.g., H100, H800).
+
+### Kernel variants
+
+| API | Description |
+|:----|:------------|
+| `piecewise_sparse_attention_hyd` | The version corresponding to the paper. |
+| `piecewise_sparse_attention_0th` | A simplified zeroth-order version that supports training. |
 
 ## 🎮 Quick Start
 ### Text-to-Image Generation
@@ -66,6 +73,40 @@ image = pipe(
     num_inference_steps=50,
     max_sequence_length=512,
 ).images[0]
+```
+
+Use the explicit variant names when switching implementations:
+
+```python
+from piecewise_attn import (
+    piecewise_sparse_attention_0th,
+    piecewise_sparse_attention_hyd,
+)
+
+# Paper version (the existing piecewise_sparse_attention alias points here).
+out_hyd = piecewise_sparse_attention_hyd(q, k, v, density=0.15)
+
+# Simplified trainable version.
+q, k, v = (tensor.requires_grad_() for tensor in (q, k, v))
+out_0th = piecewise_sparse_attention_0th(q, k, v, density=0.15)
+out_0th.float().square().mean().backward()
+```
+
+### Attention sink for MMDiT
+
+Both variants accept `sink_idx=None`, `0`, or `-1`. Setting it to `0` or `-1` forces the first or last K/V block into the exact top-k branch for every query block. For example, when an MMDiT such as HunyuanVideo places text tokens in the last block:
+
+```python
+from piecewise_attn import piecewise_sparse_attention_0th
+
+out = piecewise_sparse_attention_0th(
+    q,
+    k,
+    v,
+    density=0.1,
+    block_size=64,
+    sink_idx=-1,
+)
 ```
 
 
