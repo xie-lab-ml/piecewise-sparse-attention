@@ -1,1 +1,4 @@
-from .kernels.piecewise_sparse_attn_tma import piecewise_sparse_attention
+from .kernels.piecewise_sparse_attn_0th import piecewise_attention as piecewise_sparse_attention_0th
+from .kernels.piecewise_sparse_attn_hyd import piecewise_sparse_attention as piecewise_sparse_attention_hyd
+
+piecewise_sparse_attention = piecewise_sparse_attention_hyd
