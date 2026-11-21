@@ -110,11 +110,11 @@ out = piecewise_sparse_attention_0th(
 Since **PISA** ([arXiv:2602.01077](https://arxiv.org/abs/2602.01077), Feb. 1, 2026) introduced the training-free **exact-or-approximate** paradigm—fusing exact critical-block attention with centroid-based block approximations inside a unified online softmax—a growing body of research and open-source projects has explored and extended compensated sparse attention:
 
 - `2026/03` **[SVG-EAR](https://arxiv.org/abs/2603.08982)**: Combines SVG2's QK clustering with PISA's zeroth-order centroid approximation.
-- `2026/07` **[Sol-Attn](https://arxiv.org/abs/2607.24027)**: Unifies threshold routing and tail compensation with exact sparse attention in a single online-softmax pass.
-- `2026/08` **[FlashPrefill V2](https://arxiv.org/abs/2608.19758)**: Brings exact-or-approximate block-mean compensation to long-context LLM prefill serving.
-- `2026/08` **[ClusterAttention](https://arxiv.org/abs/2608.26965)**: Combines PDDP-style QK clustering with PISA's zeroth-order centroid approximation.
-- `2026/10` **[Piecewise-Taylor Attention (PWT)](https://github.com/HaoyiZhu/Piecewise-Taylor-Attention)**: Extends PISA with a second-order key-variance denominator correction.
-- `2026/11` **[TriTile](https://arxiv.org/abs/2610.35706)**, **[DecoupAttn](https://arxiv.org/abs/2611.05917)**, **[ESTRA](https://arxiv.org/abs/2611.10448)**, **[Token2Tile](https://arxiv.org/abs/2611.17930)**, **[PoCoAttn](https://arxiv.org/abs/2611.20307)**, **[Spark-H3](https://arxiv.org/abs/2611.24256)**: Further extend exact-or-approximate block compensation with refined clustering, adaptive budgeting, or multi-tier quantization across video DiTs.
+- `2026/07` **[Sol-Attn](https://arxiv.org/abs/2607.24027)**: Unifies routing and approximation with sparse attention in a single online-softmax pass.
+- `2026/08` **[FlashPrefill V2](https://arxiv.org/abs/2608.19758)**: Brings block-mean compensation to LLM prefill serving.
+- `2026/08` **[ClusterAttention](https://arxiv.org/abs/2608.26965)**: Combines PDDP-style QK clustering with zeroth-order centroid approximation.
+- `2026/10` **[Piecewise-Taylor Attention (PWT)](https://github.com/HaoyiZhu/Piecewise-Taylor-Attention)**: Extends PISA with a second-order correction.
+- `2026/11` **[TriTile](https://arxiv.org/abs/2610.35706)**, **[DecoupAttn](https://arxiv.org/abs/2611.05917)**, **[ESTRA](https://arxiv.org/abs/2611.10448)**, **[Token2Tile](https://arxiv.org/abs/2611.17930)**, **[PoCoAttn](https://arxiv.org/abs/2611.20307)**, **[Spark-H3](https://arxiv.org/abs/2611.24256)**: Further extend exact-or-approximate block compensation with QK clustering and other techniques.
 
 *We sincerely thank the community for following up on and advancing the exact-or-approximate paradigm!*
 
